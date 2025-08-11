@@ -1,4 +1,8 @@
 {
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "styled-components": "^6.1.19"
   },
