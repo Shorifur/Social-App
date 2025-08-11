@@ -3,13 +3,13 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const authMiddleware = require('../middleware/auth'); // assumes CommonJS export
+const ffmpeg = require('fluent-ffmpeg');
+const authMiddleware = require('../middleware/auth');
 const User = require('../models/User');
 
-// Configure multer storage with dynamic destination folder
+// Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // If upload is for story, store in 'uploads/stories', else 'uploads/'
     const isStoryUpload = req.originalUrl.includes('/story');
     const uploadDir = path.join(__dirname, '../uploads', isStoryUpload ? 'stories' : '');
 
@@ -20,14 +20,13 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    // Use authenticated user's ID for filename prefix
     const userId = req.user?._id || 'user';
     const filename = `${userId}_${Date.now()}${ext}`;
     cb(null, filename);
   }
 });
 
-// File filter to allow only images (jpeg, jpg, png, gif)
+// File filter for images only
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -39,12 +38,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Multer upload instance with limits (default 5MB or from env)
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: parseInt(process.env.FILE_UPLOAD_SIZE_LIMIT || '5', 10) * 1024 * 1024, // 5MB default
+    fileSize: parseInt(process.env.FILE_UPLOAD_SIZE_LIMIT || '5', 10) * 1024 * 1024,
   }
 });
 
@@ -114,6 +112,27 @@ router.post('/story', authMiddleware, upload.single('media'), async (req, res) =
     console.error('Upload story media error:', err);
     res.status(500).json({ message: 'Failed to upload story media' });
   }
+});
+
+// Upload and compress video
+router.post('/video', authMiddleware, upload.single('video'), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No video uploaded' });
+
+  const inputPath = req.file.path;
+  const outputFilename = `compressed_${Date.now()}.mp4`;
+  const outputPath = path.join(__dirname, '../uploads', outputFilename);
+
+  ffmpeg(inputPath)
+    .outputOptions('-vf', 'scale=640:-1')
+    .save(outputPath)
+    .on('end', () => {
+      const relativePath = path.join('uploads', outputFilename).replace(/\\/g, '/');
+      res.json({ url: `/${relativePath}` });
+    })
+    .on('error', (err) => {
+      console.error('Video compression error:', err);
+      res.status(500).json({ message: 'Failed to compress video' });
+    });
 });
 
 // Delete profile or cover photo

@@ -6,6 +6,7 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit'); // Added rate limiter
 
 // Load environment variables
 dotenv.config();
@@ -33,17 +34,29 @@ const io = socketIo(server, {
   },
 });
 
-// Body parsers
+// === SECURITY MIDDLEWARE SETUP - BEFORE OTHER MIDDLEWARES AND ROUTES ===
+
+// Helmet helps secure your app by setting various HTTP headers
+app.use(helmet());
+
+// Rate limiter to limit repeated requests from same IP
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  })
+);
+
+// === BODY PARSERS ===
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Security middleware
-app.use(helmet());
 
 // Enable CORS
 app.use(cors());
 
-// Routes
+// === ROUTES ===
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRouter);
 app.use('/api/posts', postRoutes);
@@ -139,4 +152,4 @@ process.on('SIGINT', async () => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`)); // here is my old code
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
