@@ -1,16 +1,7 @@
-# Node modules
-node_modules/
+here is the link and name 
 
-# Build output
-client/build/
-server/uploads/
+Key	Value
+REACT_APP_API_URL	https://social-platform-backend-m.onrender.com/api
 
-# Environment files
-.env
 
-# Logs
-*.log
-
-# OS-specific
-.DS_Store
-Thumbs.db
+kyVV5wCYPxLU5Q5w password and username is shorifur88
