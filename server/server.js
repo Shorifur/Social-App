@@ -34,18 +34,14 @@ const io = socketIo(server, {
   },
 });
 
-// === SECURITY MIDDLEWARE SETUP - BEFORE OTHER MIDDLEWARES AND ROUTES ===
-
-// Helmet helps secure your app by setting various HTTP headers
+// === SECURITY MIDDLEWARE SETUP ===
 app.use(helmet());
-
-// Rate limiter to limit repeated requests from same IP
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
   })
 );
 
@@ -64,10 +60,15 @@ app.use('/api/stories', storyRoutes);
 app.use('/api/upload', uploadsRouter);
 app.use('/api/user', userRoutes);
 app.use('/api/comments', commentsRoutes);
-app.use('/api/search', searchRoutes); // <-- Use search routes
+app.use('/api/search', searchRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ✅ Health check endpoint for Render
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 // Test protected route
 app.get('/api/protected', authMiddleware, (req, res) => {
@@ -95,20 +96,17 @@ mongoose
 io.on('connection', (socket) => {
   console.log('🔌 New client connected:', socket.id);
 
-  // Join user room for personal notifications
   socket.on('joinUserRoom', (userId) => {
     const roomName = `user_${userId}`;
     socket.join(roomName);
     console.log(`User socket ${socket.id} joined room: ${roomName}`);
   });
 
-  // Listen for newNotification event and emit to specific user room
   socket.on('newNotification', (userId) => {
     const roomName = `user_${userId}`;
     io.to(roomName).emit('notification', 'New activity!');
   });
 
-  // Direct Messaging (Socket.IO)
   socket.on('sendMessage', ({ senderId, receiverId, text }) => {
     const roomName = `user_${receiverId}`;
     io.to(roomName).emit('newMessage', { senderId, text });
