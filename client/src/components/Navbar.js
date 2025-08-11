@@ -22,7 +22,7 @@ import { motion } from 'framer-motion';
 
 function Navbar({ darkMode, setDarkMode }) {
   const { user = null, loading = false } = useContext(AuthContext) || {};
-  //const [unreadCount, setUnreadCount] = useState(4);
+  const [unreadCount, setUnreadCount] = useState(4);
 
   if (loading) return null;
 
