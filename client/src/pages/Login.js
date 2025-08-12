@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { TextField, Button, Container, Typography, Box } from '@mui/material';
 import { toast } from 'react-toastify'; // ✅ Import toast
@@ -46,6 +46,16 @@ const Login = () => {
           <Button type="submit" variant="contained" sx={{ mt: 3 }}>
             Login
           </Button>
+
+          {/* Sign Up Link */}
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="body2">
+              Don't have an account?{' '}
+              <Link to="/register" style={{ textDecoration: 'none', color: '#1976d2' }}>
+                Sign Up
+              </Link>
+            </Typography>
+          </Box>
         </form>
       </Box>
     </Container>

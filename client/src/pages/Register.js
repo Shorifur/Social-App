@@ -1,15 +1,13 @@
 import React, { useState, useContext } from 'react';
-import { Grid, FormControl, InputLabel, Select, MenuItem, IconButton } from '@mui/material';
-
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { 
-  TextField, Button, Typography, Container, Box, Link,
-  //Grid, InputAdornment, IconButton, MenuItem, Select, FormControl, InputLabel
+import {
+  TextField, Button, Typography, Container, Box, Link, Grid,
+  FormControl, InputLabel, Select, MenuItem, IconButton, InputAdornment
 } from '@mui/material';
-import { 
-  Person, Email, Phone, Lock, 
-  Visibility, VisibilityOff, Transgender 
+import {
+  Person, Email, Phone, Lock,
+  Visibility, VisibilityOff, Transgender
 } from '@mui/icons-material';
 
 export default function Register() {
@@ -31,27 +29,26 @@ export default function Register() {
     setFormData({ ...formData, [prop]: event.target.value });
   };
 
-// Change this in your handleSubmit:
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (formData.password !== formData.confirmPassword) {
-    setError("Passwords don't match");
-    return;
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  try {
-    await register({
-      username: `${formData.firstName} ${formData.lastName}`,
-      email: formData.email,
-      password: formData.password
-      // Add other fields as needed by your backend
-    });
-    navigate('/'); // Redirect to home after registration
-  } catch (err) {
-    setError(err.response?.data?.message || 'Registration failed');
-  }
-};
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords don't match");
+      return;
+    }
+
+    try {
+      await register({
+        username: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password
+        // Add other fields if needed
+      });
+      navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed');
+    }
+  };
 
   return (
     <Container maxWidth="sm">
@@ -59,12 +56,16 @@ const handleSubmit = async (e) => {
         <Typography variant="h4" align="center" gutterBottom>
           Create Account
         </Typography>
-        
-        {error && <Typography color="error" align="center" sx={{ mb: 2 }}>{error}</Typography>}
+
+        {error && (
+          <Typography color="error" align="center" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
-            {/* Name Fields */}
+            {/* First & Last Name */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -73,7 +74,11 @@ const handleSubmit = async (e) => {
                 onChange={handleChange('firstName')}
                 required
                 InputProps={{
-                  startAdornment: <Person fontSize="small" sx={{ mr: 1 }} />
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Person fontSize="small" />
+                    </InputAdornment>
+                  )
                 }}
               />
             </Grid>
@@ -87,7 +92,7 @@ const handleSubmit = async (e) => {
               />
             </Grid>
 
-            {/* Contact Fields */}
+            {/* Email */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -97,10 +102,16 @@ const handleSubmit = async (e) => {
                 onChange={handleChange('email')}
                 required
                 InputProps={{
-                  startAdornment: <Email fontSize="small" sx={{ mr: 1 }} />
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Email fontSize="small" />
+                    </InputAdornment>
+                  )
                 }}
               />
             </Grid>
+
+            {/* Phone */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -108,20 +119,22 @@ const handleSubmit = async (e) => {
                 value={formData.phone}
                 onChange={handleChange('phone')}
                 InputProps={{
-                  startAdornment: <Phone fontSize="small" sx={{ mr: 1 }} />
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Phone fontSize="small" />
+                    </InputAdornment>
+                  )
                 }}
               />
             </Grid>
 
-            {/* Gender Field */}
+            {/* Gender */}
             <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Gender</InputLabel>
                 <Select
                   value={formData.gender}
                   onChange={handleChange('gender')}
-                  label="Gender"
-                  startAdornment={<Transgender fontSize="small" sx={{ mr: 1 }} />}
                 >
                   <MenuItem value="male">Male</MenuItem>
                   <MenuItem value="female">Female</MenuItem>
@@ -131,7 +144,7 @@ const handleSubmit = async (e) => {
               </FormControl>
             </Grid>
 
-            {/* Password Fields */}
+            {/* Password */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -141,10 +154,17 @@ const handleSubmit = async (e) => {
                 onChange={handleChange('password')}
                 required
                 InputProps={{
-                  startAdornment: <Lock fontSize="small" sx={{ mr: 1 }} />,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock fontSize="small" />
+                    </InputAdornment>
+                  ),
                   endAdornment: (
                     <IconButton
-                      onClick={() => setFormData({ ...formData, showPassword: !formData.showPassword })}
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, showPassword: !formData.showPassword })
+                      }
                     >
                       {formData.showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -152,6 +172,8 @@ const handleSubmit = async (e) => {
                 }}
               />
             </Grid>
+
+            {/* Confirm Password */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -161,7 +183,11 @@ const handleSubmit = async (e) => {
                 onChange={handleChange('confirmPassword')}
                 required
                 InputProps={{
-                  startAdornment: <Lock fontSize="small" sx={{ mr: 1 }} />
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock fontSize="small" />
+                    </InputAdornment>
+                  )
                 }}
               />
             </Grid>
