@@ -2,12 +2,27 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import {
-  TextField, Button, Typography, Container, Box, Link, Grid,
-  FormControl, InputLabel, Select, MenuItem, IconButton, InputAdornment
+  TextField,
+  Button,
+  Typography,
+  Container,
+  Box,
+  Link,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  IconButton,
+  InputAdornment
 } from '@mui/material';
 import {
-  Person, Email, Phone, Lock,
-  Visibility, VisibilityOff, Transgender
+  Person,
+  Email,
+  Phone,
+  Lock,
+  Visibility,
+  VisibilityOff
 } from '@mui/icons-material';
 
 export default function Register() {
@@ -38,11 +53,14 @@ export default function Register() {
     }
 
     try {
+      // Pass all needed fields to register method
       await register({
-        username: `${formData.firstName} ${formData.lastName}`,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
+        phone: formData.phone,
+        gender: formData.gender,
         password: formData.password
-        // Add other fields if needed
       });
       navigate('/');
     } catch (err) {
@@ -65,7 +83,7 @@ export default function Register() {
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
-            {/* First & Last Name */}
+            {/* First Name */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -82,6 +100,7 @@ export default function Register() {
                 }}
               />
             </Grid>
+            {/* Last Name */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -91,7 +110,6 @@ export default function Register() {
                 required
               />
             </Grid>
-
             {/* Email */}
             <Grid item xs={12}>
               <TextField
@@ -110,7 +128,6 @@ export default function Register() {
                 }}
               />
             </Grid>
-
             {/* Phone */}
             <Grid item xs={12}>
               <TextField
@@ -127,7 +144,6 @@ export default function Register() {
                 }}
               />
             </Grid>
-
             {/* Gender */}
             <Grid item xs={12}>
               <FormControl fullWidth>
@@ -135,6 +151,7 @@ export default function Register() {
                 <Select
                   value={formData.gender}
                   onChange={handleChange('gender')}
+                  label="Gender"
                 >
                   <MenuItem value="male">Male</MenuItem>
                   <MenuItem value="female">Female</MenuItem>
@@ -143,7 +160,6 @@ export default function Register() {
                 </Select>
               </FormControl>
             </Grid>
-
             {/* Password */}
             <Grid item xs={12}>
               <TextField
@@ -172,7 +188,6 @@ export default function Register() {
                 }}
               />
             </Grid>
-
             {/* Confirm Password */}
             <Grid item xs={12}>
               <TextField

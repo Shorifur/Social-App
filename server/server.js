@@ -6,7 +6,7 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit'); // Added rate limiter
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
@@ -19,10 +19,11 @@ const storyRoutes = require('./routes/social/stories');
 const uploadsRouter = require('./routes/uploads');
 const userRoutes = require('./routes/user');
 const commentsRoutes = require('./routes/comments');
-const searchRoutes = require('./routes/search'); // <-- Added search routes
+const searchRoutes = require('./routes/search');
 
 // Middleware
 const authMiddleware = require('./middleware/auth');
+const errorHandler = require('./middleware/errorHandler'); // Enhanced error handler
 
 // Initialize app and HTTP server
 const app = express();
@@ -49,8 +50,13 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Enable CORS
-app.use(cors());
+// Enable CORS with production-ready settings
+app.use(cors({
+  origin: process.env.CLIENT_URL || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 // === ROUTES ===
 app.use('/api/auth', authRoutes);
@@ -67,7 +73,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ✅ Health check endpoint for Render
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+  res.status(200).json({ 
+    status: 'ok',
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    uptime: process.uptime()
+  });
 });
 
 // Test protected route
@@ -83,14 +93,19 @@ app.use((req, res, next) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Connect to MongoDB
+// Connect to MongoDB with enhanced options
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000
   })
   .then(() => console.log('✅ MongoDB Connected'))
-  .catch((err) => console.error('❌ MongoDB Connection Error:', err));
+  .catch((err) => {
+    console.error('❌ MongoDB Connection Error:', err);
+    process.exit(1); // Exit if DB connection fails
+  });
 
 // Socket.IO events
 io.on('connection', (socket) => {
@@ -132,22 +147,30 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Server error' });
-});
+// Use enhanced error handler (must be after all routes)
+app.use(errorHandler);
 
 // Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('🛑 SIGINT received: closing server');
-  await mongoose.disconnect();
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
-});
+const shutdown = async () => {
+  console.log('🛑 Received shutdown signal: closing server');
+  try {
+    await mongoose.disconnect();
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+  } catch (err) {
+    console.error('Error during shutdown:', err);
+    process.exit(1);
+  }
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 // Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
