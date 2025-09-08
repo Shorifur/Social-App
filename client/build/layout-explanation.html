@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Utilization in Social Media Layouts</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        
+        header {
+            background: #1877f2;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .content {
+            display: flex;
+            min-height: 600px;
+        }
+        
+        .left-space {
+            width: 280px;
+            background: #f0f2f5;
+            padding: 20px;
+            border-right: 1px solid #dddfe2;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background: white;
+        }
+        
+        .right-sidebar {
+            width: 300px;
+            background: #f0f2f5;
+            padding: 20px;
+            border-left: 1px solid #dddfe2;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        h2 {
+            margin-bottom: 15px;
+            color: #1877f2;
+        }
+        
+        .purpose {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .purpose h3 {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            color: #1877f2;
+        }
+        
+        .purpose i {
+            margin-right: 10px;
+            background: #1877f2;
+            color: white;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .nav-item {
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .nav-item:hover {
+            background: #e4e6eb;
+        }
+        
+        .nav-item i {
+            margin-right: 10px;
+            color: #1877f2;
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .post {
+            background: #f0f2f5;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #1877f2;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .post-content {
+            margin-left: 50px;
+        }
+        
+        .purpose-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .left-space {
+                width: 80px;
+                padding: 10px;
+            }
+            
+            .nav-item span {
+                display: none;
+            }
+            
+            .nav-item i {
+                margin-right: 0;
+                font-size: 24px;
+            }
+            
+            .right-sidebar {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .left-space {
+                display: none;
+            }
+            
+            .content {
+                flex-direction: column;
+            }
+            
+            .right-sidebar {
+                width: 100%;
+                display: block;
+                border-left: none;
+                border-top: 1px solid #dddfe2;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <h1>Purpose of Left Side Space in Social Media Layouts</h1>
+    
+    <div class="container">
+        <header>
+            <div class="logo">SocialSpace</div>
+            <div class="search">Search...</div>
+            <div class="user">User Menu</div>
+        </header>
+        
+        <div class="content">
+            <div class="left-space">
+                <h2>Navigation</h2>
+                <div class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-user-friends"></i>
+                    <span>Friends</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Groups</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-store"></i>
+                    <span>Marketplace</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-video"></i>
+                    <span>Watch</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>Events</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-history"></i>
+                    <span>Memories</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-bookmark"></i>
+                    <span>Saved</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-flag"></i>
+                    <span>Pages</span>
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <h2>News Feed</h2>
+                
+                <div class="post">
+                    <div class="post-header">
+                        <div class="avatar">J</div>
+                        <div>
+                            <strong>John Doe</strong>
+                            <div>10 mins ago</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        <p>This is an example post showing how content appears in the main feed area.</p>
+                    </div>
+                </div>
+                
+                <div class="post">
+                    <div class="post-header">
+                        <div class="avatar">S</div>
+                        <div>
+                            <strong>Sarah Smith</strong>
+                            <div>45 mins ago</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        <p>Another post example demonstrating the layout of content in the central column.</p>
+                    </div>
+                </div>
+                
+                <div class="purpose-grid">
+                    <div class="purpose">
+                        <h3><i class="fas fa-compass"></i> Navigation Hub</h3>
+                        <p>The left space serves as the primary navigation area, providing quick access to all sections of the platform.</p>
+                    </div>
+                    
+                    <div class="purpose">
+                        <h3><i class="fas fa-balance-scale"></i> Visual Balance</h3>
+                        <p>Creates a balanced layout that prevents visual clutter and improves content readability.</p>
+                    </div>
+                    
+                    <div class="purpose">
+                        <h3><i class="fas fa-expand"></i> Future Expansion</h3>
+                        <p>Reserves space for additional features, shortcuts, and promotional content as the platform evolves.</p>
+                    </div>
+                    
+                    <div class="purpose">
+                        <h3><i class="fas fa-eye"></i> Focus Direction</h3>
+                        <p>Guides the user's eye toward the main content area while keeping navigation always accessible.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-sidebar">
+                <h2>Sponsored</h2>
+                <p>Advertisements and sponsored content appear here.</p>
+                
+                <h2>Birthdays</h2>
+                <p>Friends' birthdays are shown in this section.</p>
+                
+                <h2>Contacts</h2>
+                <p>Online friends and contacts list appears here.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple responsive behavior demonstration
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        navItems.forEach(item => {
+            item.addEventListener('click', function() {
+                navItems.forEach(i => i.style.background = '');
+                this.style.background = '#e4e6eb';
+            });
+        });
+    </script>
+</body>
+</html>

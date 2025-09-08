@@ -26,7 +26,7 @@ const settingsRoutes = require('./routes/settings');
 const reactionRoutes = require('./routes/social/reactions');
 const commentRoutes = require('./routes/social/comments');
 const shareRoutes = require('./routes/social/shares');
-
+const reactionsRoutes = require('./routes/reactions');
 
 // ✅ NEW ROUTES
 const storyRoutes = require('./routes/social/stories');
@@ -71,6 +71,16 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Server is live!' });
 });
 
+// === HEALTH CHECK ENDPOINT ===
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    uptime: process.uptime(),
+  });
+});
+
 // === API ROUTES ===
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', passwordResetRoutes);
@@ -86,7 +96,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/social/reactions', reactionRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/shares', shareRoutes);
-app.use('/api/search', searchRoutes);
+app.use('/api', reactionsRoutes);
 
 // ✅ New API routes
 app.use('/api/stories', storyRoutes);
@@ -95,15 +105,6 @@ app.use('/api/admin', adminRoutes);
 
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    uptime: process.uptime(),
-  });
-});
 
 // Example protected route
 app.get('/api/protected', authMiddleware, (req, res) => {

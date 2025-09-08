@@ -1,0 +1,32 @@
+# render.yaml
+
+services:
+  - type: web
+    name: social-platform-api
+    env: node
+    plan: free
+    region: ohio
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromSecret: MONGODB_URI
+      - key: JWT_SECRET
+        fromSecret: JWT_SECRET
+      - key: CLIENT_URL
+        value: https://your-app.vercel.app
+    healthCheckPath: /api/health
+
+  # PeerJS server for WebRTC
+  - type: web
+    name: social-platform-peerjs
+    env: node
+    plan: free
+    region: ohio
+    buildCommand: npm install
+    startCommand: npx peerjs --port $PORT --key peerjs --path /peerjs
+    envVars:
+      - key: PORT
+        value: 9000

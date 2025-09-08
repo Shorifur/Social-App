@@ -1,10 +1,9 @@
-// client/src/components/PostCard.js
 import { useState, useEffect } from 'react';
 import { reactToPost, removeReaction, getUserReaction } from '../api/reactions';
 import { useAuth } from '../hooks/useAuth';
 import './PostCard.css';
 
-const PostCard = ({ post, onComment }) => {
+const PostCard = ({ post, onComment }) => { // Removed unused 'user' from props
   const [userReaction, setUserReaction] = useState(null);
   const [reactionCounts, setReactionCounts] = useState(post.reactionCounts || {});
   const [showReactionPicker, setShowReactionPicker] = useState(false);
@@ -12,23 +11,22 @@ const PostCard = ({ post, onComment }) => {
   const [showComments, setShowComments] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => {
-    loadUserReaction();
-  }, [post._id]);
-
   const loadUserReaction = async () => {
     try {
       const response = await getUserReaction(post._id);
-      setUserReaction(response.userReaction);
+      setUserReaction(response?.userReaction || null);
     } catch (error) {
       console.error('Error loading user reaction:', error);
     }
   };
 
+  useEffect(() => {
+    loadUserReaction();
+  }, [post._id, loadUserReaction]); // Added loadUserReaction to dependencies
+
   const handleReaction = async (reactionType) => {
     try {
       if (userReaction === reactionType) {
-        // remove reaction
         await removeReaction(post._id);
         setUserReaction(null);
         setReactionCounts((prev) => ({
@@ -36,7 +34,6 @@ const PostCard = ({ post, onComment }) => {
           [reactionType]: Math.max(0, (prev[reactionType] || 0) - 1),
         }));
       } else {
-        // add/change reaction
         const response = await reactToPost(post._id, reactionType);
         setUserReaction(reactionType);
         setReactionCounts(response.reactionCounts);
