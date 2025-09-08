@@ -1,18 +1,20 @@
+// client/src/App.js
 import React, { useState, useEffect, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Image lazy-load styles (global import so it works in all components)
+// Global styles
+import './styles/global.css';
 import 'react-lazy-load-image-component/src/effects/blur.css';
 
 import { lightTheme, darkTheme } from './theme/theme';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Lazy loaded pages (Code splitting)
-const Home = React.lazy(() => import('./pages/Home'));
+// Lazy loaded pages
+const Feed = React.lazy(() => import('./pages/Feed'));
 const Profile = React.lazy(() => import('./pages/Profile'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
@@ -30,9 +32,7 @@ function App() {
   // Load saved mode from localStorage
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode');
-    if (savedMode !== null) {
-      setDarkMode(savedMode === 'true');
-    }
+    if (savedMode !== null) setDarkMode(savedMode === 'true');
   }, []);
 
   // Save mode to localStorage
@@ -46,11 +46,18 @@ function App() {
       <CssBaseline />
       <Router>
         <Navbar darkMode={darkMode} setDarkMode={handleThemeChange} />
-        
+
         {/* Suspense fallback for lazy-loaded pages */}
-        <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>}>
+        <Suspense
+          fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>}
+        >
           <Routes>
-            <Route path="/" element={<Home />} />
+            {/* Public routes */}
+            <Route path="/" element={<Feed />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* Protected Routes */}
             <Route
               path="/dashboard"
               element={
@@ -59,10 +66,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
             <Route
-              path="/:username"
+              path="/profile/:userId"
               element={
                 <ProtectedRoute>
                   <Profile />

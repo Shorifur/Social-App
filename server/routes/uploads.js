@@ -1,3 +1,4 @@
+// server/routes/uploads.js
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -7,7 +8,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const authMiddleware = require('../middleware/auth');
 const User = require('../models/User');
 
-// Configure multer storage
+// === Multer Storage Configuration ===
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const isStoryUpload = req.originalUrl.includes('/story');
@@ -26,11 +27,12 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter for images only
+// === File Filter (Images Only) ===
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
+
   if (extname && mimetype) {
     cb(null, true);
   } else {
@@ -42,11 +44,11 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: parseInt(process.env.FILE_UPLOAD_SIZE_LIMIT || '5', 10) * 1024 * 1024,
+    fileSize: parseInt(process.env.FILE_UPLOAD_SIZE_LIMIT || '5', 10) * 1024 * 1024, // Default 5MB
   }
 });
 
-// Upload profile picture
+// === Upload Profile Picture ===
 router.post('/profile', authMiddleware, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
@@ -71,7 +73,7 @@ router.post('/profile', authMiddleware, upload.single('image'), async (req, res)
   }
 });
 
-// Upload cover photo
+// === Upload Cover Photo ===
 router.post('/cover', authMiddleware, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
@@ -96,13 +98,14 @@ router.post('/cover', authMiddleware, upload.single('image'), async (req, res) =
   }
 });
 
-// Upload story media (image/video)
+// === Upload Story (Image/Video) ===
 router.post('/story', authMiddleware, upload.single('media'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
     const folder = req.originalUrl.includes('/story') ? 'stories' : '';
     const relativePath = path.join('uploads', folder, req.file.filename).replace(/\\/g, '/');
+
     res.json({
       url: `/${relativePath}`,
       type: req.file.mimetype,
@@ -114,7 +117,7 @@ router.post('/story', authMiddleware, upload.single('media'), async (req, res) =
   }
 });
 
-// Upload and compress video
+// === Upload & Compress Video ===
 router.post('/video', authMiddleware, upload.single('video'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No video uploaded' });
 
@@ -135,7 +138,7 @@ router.post('/video', authMiddleware, upload.single('video'), (req, res) => {
     });
 });
 
-// Delete profile or cover photo
+// === Delete Profile or Cover ===
 router.delete('/:type', authMiddleware, async (req, res) => {
   try {
     const { type } = req.params;

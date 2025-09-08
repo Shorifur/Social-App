@@ -1,31 +1,27 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+// client/src/pages/Register.js
+import { useState } from 'react';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import axios from '../api/axios';
+import { toast } from 'react-toastify'; // ✅ Toast notifications
 import {
   TextField,
   Button,
   Typography,
   Container,
   Box,
-  Link,
   Grid,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   IconButton,
-  InputAdornment
+  InputAdornment,
+  CircularProgress
 } from '@mui/material';
-import {
-  Person,
-  Email,
-  Phone,
-  Lock,
-  Visibility,
-  VisibilityOff
-} from '@mui/icons-material';
+import { Person, Email, Phone, Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 
-export default function Register() {
+const Register = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -36,8 +32,8 @@ export default function Register() {
     confirmPassword: '',
     showPassword: false
   });
-  const [error, setError] = useState('');
-  const { register } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (prop) => (event) => {
@@ -46,15 +42,15 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords don't match");
+      toast.error("❌ Passwords don't match");
       return;
     }
 
+    setLoading(true);
+
     try {
-      // Pass all needed fields to register method
-      await register({
+      const response = await axios.post('/auth/register', {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -62,9 +58,17 @@ export default function Register() {
         gender: formData.gender,
         password: formData.password
       });
-      navigate('/');
+
+      if (response.data.status === 'success') {
+        login(response.data.data.user, response.data.token);
+        toast.success('✅ Registration successful!');
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      console.error('❌ Registration error:', err);
+      toast.error(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,12 +78,6 @@ export default function Register() {
         <Typography variant="h4" align="center" gutterBottom>
           Create Account
         </Typography>
-
-        {error && (
-          <Typography color="error" align="center" sx={{ mb: 2 }}>
-            {error}
-          </Typography>
-        )}
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
@@ -100,6 +98,7 @@ export default function Register() {
                 }}
               />
             </Grid>
+
             {/* Last Name */}
             <Grid item xs={12} sm={6}>
               <TextField
@@ -110,6 +109,7 @@ export default function Register() {
                 required
               />
             </Grid>
+
             {/* Email */}
             <Grid item xs={12}>
               <TextField
@@ -128,6 +128,7 @@ export default function Register() {
                 }}
               />
             </Grid>
+
             {/* Phone */}
             <Grid item xs={12}>
               <TextField
@@ -144,6 +145,7 @@ export default function Register() {
                 }}
               />
             </Grid>
+
             {/* Gender */}
             <Grid item xs={12}>
               <FormControl fullWidth>
@@ -160,6 +162,7 @@ export default function Register() {
                 </Select>
               </FormControl>
             </Grid>
+
             {/* Password */}
             <Grid item xs={12}>
               <TextField
@@ -188,6 +191,7 @@ export default function Register() {
                 }}
               />
             </Grid>
+
             {/* Confirm Password */}
             <Grid item xs={12}>
               <TextField
@@ -213,18 +217,22 @@ export default function Register() {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2, py: 1.5 }}
+            disabled={loading}
+            startIcon={loading && <CircularProgress size={20} />}
           >
-            Register
+            {loading ? 'Creating Account...' : 'Register'}
           </Button>
 
           <Typography align="center">
             Already have an account?{' '}
-            <Link href="/login" underline="hover" sx={{ fontWeight: 'bold' }}>
+            <RouterLink to="/login" style={{ fontWeight: 'bold', textDecoration: 'none' }}>
               Sign In
-            </Link>
+            </RouterLink>
           </Typography>
         </form>
       </Box>
     </Container>
   );
-}
+};
+
+export default Register;

@@ -1,0 +1,255 @@
+/* client/src/components/Header/Header.module.css */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: var(--color-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+/* Logo Styles */
+.logoContainer {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 0.75rem;
+  transition: opacity 0.2s;
+}
+
+.logo:hover {
+  opacity: 0.8;
+}
+
+.logoImage {
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.logoText {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Navigation Styles */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.authLinks {
+  display: flex;
+  gap: 1rem;
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Navigation Links */
+.navLink {
+  padding: 0.75rem 1.25rem;
+  text-decoration: none;
+  color: var(--color-gray-700);
+  font-weight: 500;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.navLink:hover {
+  color: var(--color-primary);
+  background-color: var(--color-primary-50);
+  transform: translateY(-2px);
+}
+
+.navLink.primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.navLink.primary:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+}
+
+.navLink.active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-10);
+}
+
+/* User Dropdown */
+.userDropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 12px;
+  transition: background-color 0.2s;
+}
+
+.userDropdown:hover {
+  background-color: var(--color-gray-100);
+}
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-primary);
+}
+
+.userName {
+  font-weight: 600;
+  color: var(--color-gray-800);
+}
+
+.dropdownContent {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem;
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.userDropdown:hover .dropdownContent {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdownItem {
+  display: block;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  color: var(--color-gray-700);
+  border-radius: 8px;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.dropdownItem:hover {
+  background-color: var(--color-primary-50);
+  color: var(--color-primary);
+}
+
+/* Mobile Styles */
+.menuButton {
+  display: none;
+  flex-direction: column;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.hamburger {
+  width: 24px;
+  height: 2px;
+  background-color: var(--color-gray-700);
+  margin: 3px 0;
+  transition: 0.3s;
+  position: relative;
+}
+
+.mobileMenu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+}
+
+.mobileMenuContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobileNavLink {
+  padding: 1rem;
+  text-decoration: none;
+  color: var(--color-gray-700);
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 1.1rem;
+}
+
+.mobileNavLink:hover {
+  background-color: var(--color-primary-50);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header {
+    padding: 1rem;
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .menuButton {
+    display: flex;
+  }
+
+  .mobileMenu {
+    display: block;
+  }
+
+  .logoText {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logoText {
+    display: none;
+  }
+  
+  .logoImage {
+    height: 2rem;
+    width: 2rem;
+  }
+}

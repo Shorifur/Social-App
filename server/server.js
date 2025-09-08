@@ -1,45 +1,51 @@
+// server/server.js
 const path = require('path'); // Must be first
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const http = require('http');
-const socketIo = require('socket.io');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
 
-// Import route files
+// === ROUTES ===
 const authRoutes = require('./routes/auth');
 const usersRouter = require('./routes/auth/users');
-const postRoutes = require('./routes/social/posts');
-const storyRoutes = require('./routes/social/stories');
+const passwordResetRoutes = require('./routes/auth/passwordReset');
+const socialRoutes = require('./routes/social');
 const uploadsRouter = require('./routes/uploads');
 const userRoutes = require('./routes/user');
 const commentsRoutes = require('./routes/comments');
 const searchRoutes = require('./routes/search');
+const chatRoutes = require('./routes/chat');
+const messageRoutes = require('./routes/messages');
+const settingsRoutes = require('./routes/settings');
+const reactionRoutes = require('./routes/social/reactions');
+const commentRoutes = require('./routes/social/comments');
+const shareRoutes = require('./routes/social/shares');
+const searchRoutes = require('./routes/search');
+
+// ✅ NEW ROUTES
+const storyRoutes = require('./routes/social/stories');
+const callRoutes = require('./routes/calls');
+const adminRoutes = require('./routes/admin');
 
 // Middleware
 const authMiddleware = require('./middleware/auth');
-const errorHandler = require('./middleware/errorHandler'); // Enhanced error handler
+const errorHandler = require('./middleware/errorHandler');
 
-// Initialize app and HTTP server
+// Initialize express + HTTP server
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
-});
 
-// === SECURITY MIDDLEWARE SETUP ===
+// === SECURITY MIDDLEWARE ===
 app.use(helmet());
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000,
+    windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
@@ -50,37 +56,56 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Enable CORS with production-ready settings
-app.use(cors({
-  origin: process.env.CLIENT_URL || '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+// === CORS ===
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+);
 
-// === ROUTES ===
+// === TEST ENDPOINT ===
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is live!' });
+});
+
+// === API ROUTES ===
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', passwordResetRoutes);
 app.use('/api/users', usersRouter);
-app.use('/api/posts', postRoutes);
-app.use('/api/stories', storyRoutes);
+app.use('/api/social', socialRoutes);
 app.use('/api/upload', uploadsRouter);
 app.use('/api/user', userRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/social/reactions', reactionRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/shares', shareRoutes);
+app.use('/api/search', searchRoutes);
 
-// Serve uploaded files
+// ✅ New API routes
+app.use('/api/stories', storyRoutes);
+app.use('/api/calls', callRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ✅ Health check endpoint for Render
+// Health check
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     status: 'ok',
     dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    uptime: process.uptime()
+    uptime: process.uptime(),
   });
 });
 
-// Test protected route
+// Example protected route
 app.get('/api/protected', authMiddleware, (req, res) => {
   res.json({
     message: 'Protected data',
@@ -88,67 +113,45 @@ app.get('/api/protected', authMiddleware, (req, res) => {
   });
 });
 
-// Handle 404 for unknown API routes
+// Handle 404 properly
 app.use((req, res, next) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Connect to MongoDB with enhanced options
+// Error handler
+app.use(errorHandler);
+
+// === MONGODB CONNECTION ===
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000
+    socketTimeoutMS: 45000,
   })
   .then(() => console.log('✅ MongoDB Connected'))
   .catch((err) => {
     console.error('❌ MongoDB Connection Error:', err);
-    process.exit(1); // Exit if DB connection fails
+    process.exit(1);
   });
 
-// Socket.IO events
-io.on('connection', (socket) => {
-  console.log('🔌 New client connected:', socket.id);
+// === PEERJS SERVER ===
+const peerServer = require('./utils/peerServer');
+peerServer(server);
+console.log('⚡ PeerJS server running on port 9000');
 
-  socket.on('joinUserRoom', (userId) => {
-    const roomName = `user_${userId}`;
-    socket.join(roomName);
-    console.log(`User socket ${socket.id} joined room: ${roomName}`);
-  });
+// === SOCKET.IO (using centralized handler) ===
+const { initSocket } = require('./utils/socketHandler');
+initSocket(server);
 
-  socket.on('newNotification', (userId) => {
-    const roomName = `user_${userId}`;
-    io.to(roomName).emit('notification', 'New activity!');
-  });
-
-  socket.on('sendMessage', ({ senderId, receiverId, text }) => {
-    const roomName = `user_${receiverId}`;
-    io.to(roomName).emit('newMessage', { senderId, text });
-  });
-
-  socket.on('story:view', ({ storyId, userId }) => {
-    console.log(`👁️ Story viewed: ${storyId} by user ${userId}`);
-    // TODO: Update DB if needed
-  });
-
-  socket.on('disconnect', () => {
-    console.log('❌ Client disconnected:', socket.id);
-  });
-});
-
-// Serve frontend in production
+// === SERVE CLIENT IN PRODUCTION ===
 if (process.env.NODE_ENV === 'production') {
   const clientBuildPath = path.join(__dirname, '../client/build');
   app.use(express.static(clientBuildPath));
-
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(clientBuildPath, 'index.html'));
   });
 }
-
-// Use enhanced error handler (must be after all routes)
-app.use(errorHandler);
 
 // Graceful shutdown
 const shutdown = async () => {
@@ -168,7 +171,7 @@ const shutdown = async () => {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-// Start server
+// === START SERVER ===
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

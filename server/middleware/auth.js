@@ -1,33 +1,42 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const AppError = require('../utils/appError');
 
-const auth = async (req, res, next) => {
+module.exports = async (req, res, next) => {
   try {
-    const token = req.header('x-auth-token');
+    let token;
 
+    // 1) Get token from Authorization header
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    // 2) If no token found
     if (!token) {
-      return res.status(401).json({ message: 'Authentication failed: No token provided' });
+      return next(new AppError('Please log in to access this resource', 401));
     }
 
-    // Verify token and decode payload
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // decoded payload may have different structure,
-    // adapt according to your token payload: e.g. decoded.user.id or decoded.id
-    const userId = decoded.user?.id || decoded.id;
-
-    const user = await User.findById(userId).select('-password');
-
-    if (!user) {
-      return res.status(401).json({ message: 'Authentication failed: User not found' });
+    // 3) Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return next(new AppError('Invalid or expired token', 401));
     }
 
-    req.user = user; // Attach user object to request
+    // 4) Check if user still exists
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next(new AppError('The user belonging to this token no longer exists', 401));
+    }
+
+    // 5) Attach user to request
+    req.user = currentUser;
     next();
   } catch (err) {
-    console.error('❌ Auth Middleware Error:', err);
-    res.status(401).json({ message: 'Authentication failed: Invalid token' });
+    next(err);
   }
 };
-
-module.exports = auth;

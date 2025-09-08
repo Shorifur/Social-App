@@ -1,47 +1,102 @@
-import { useState, useEffect, useRef } from 'react';
-import axios from '../api/api';
-import io from 'socket.io-client';
+// client/src/hooks/useNotifications.js
+import { useState, useEffect, useCallback } from 'react';
+import { getNotifications, markAsRead, markAllAsRead } from '../api/notifications';
+import { getSocket } from '../utils/socket';
+import { useAuth } from './useAuth';
 
-export const useNotifications = (userId) => {
+export const useNotifications = () => {
   const [notifications, setNotifications] = useState([]);
-  const socketRef = useRef(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
-  useEffect(() => {
-    if (!userId) return;
-
-    // Initialize socket connection once
-    if (!socketRef.current) {
-      socketRef.current = io('http://localhost:5000');
+  /**
+   * Load notifications from API
+   */
+  const loadNotifications = useCallback(async (page = 1) => {
+    try {
+      setLoading(true);
+      const response = await getNotifications(page);
+      setNotifications(response.notifications || []);
+      setUnreadCount(response.unreadCount || 0);
+    } catch (error) {
+      console.error('❌ Error loading notifications:', error);
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    const socket = socketRef.current;
+  /**
+   * Setup socket listeners
+   */
+  useEffect(() => {
+    if (!user) return;
 
-    // Join user-specific room for notifications
-    socket.emit('joinUserRoom', userId);
+    loadNotifications();
 
-    // Fetch existing notifications
-    const fetchNotifications = async () => {
-      try {
-        const { data } = await axios.get('/notifications');
-        setNotifications(data);
-      } catch (err) {
-        console.error('Failed to fetch notifications', err);
-      }
-    };
-    fetchNotifications();
+    const socket = getSocket();
+    if (!socket) return;
 
-    // Listen for incoming notifications
-    socket.on('notification', (message) => {
-      setNotifications((prev) => [{ message, isNew: true }, ...prev]);
+    // Incoming new notification
+    socket.on('new_notification', (notification) => {
+      setNotifications((prev) => [notification, ...prev]);
+      setUnreadCount((prev) => prev + 1);
     });
 
-    // Cleanup on unmount
-    return () => {
-      socket.off('notification');
-      // Optionally disconnect socket if no other components use it
-      // socket.disconnect();
-    };
-  }, [userId]);
+    // All notifications marked as read
+    socket.on('notifications_all_read', () => {
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    });
 
-  return notifications;
+    // Cleanup
+    return () => {
+      socket.off('new_notification');
+      socket.off('notifications_all_read');
+    };
+  }, [user, loadNotifications]);
+
+  /**
+   * Mark single notification as read
+   */
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      await markAsRead(notificationId);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n._id === notificationId ? { ...n, isRead: true } : n
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('❌ Error marking notification as read:', error);
+    }
+  };
+
+  /**
+   * Mark all notifications as read
+   */
+  const markAllNotificationsAsRead = async () => {
+    try {
+      await markAllAsRead();
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('mark_all_notifications_read');
+      }
+    } catch (error) {
+      console.error('❌ Error marking all notifications as read:', error);
+    }
+  };
+
+  return {
+    notifications,
+    unreadCount,
+    loading,
+    loadNotifications,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+  };
 };

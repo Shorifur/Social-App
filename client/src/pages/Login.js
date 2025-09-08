@@ -1,64 +1,88 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import { TextField, Button, Container, Typography, Box } from '@mui/material';
-import { toast } from 'react-toastify'; // ✅ Import toast
+// client/src/pages/Login.js
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import axios from '../api/axios';
+import { toast } from 'react-toastify'; // ✅ Toast notifications
+import './Auth.css';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { login } = useContext(AuthContext);
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('🔐 Attempting login with:', { email, password });
+    setLoading(true);
+
     try {
-      await login(email, password);
-      toast.success('✅ Logged in successfully!'); // ✅ Show success toast
-      navigate('/dashboard');
+      const response = await axios.post('/auth/login', formData);
+
+      if (response.data.status === 'success') {
+        login(response.data.data.user, response.data.token);
+        toast.success('✅ Logged in successfully!');
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err) {
       console.error('❌ Login failed:', err);
-      toast.error('❌ Invalid credentials'); // ✅ Show error toast
+      toast.error(err.response?.data?.message || '❌ Invalid credentials');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 8, textAlign: 'center' }}>
-        <Typography variant="h4">Login</Typography>
-        <form onSubmit={handleSubmit}>
-          <TextField
-            label="Email"
-            fullWidth
-            margin="normal"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <TextField
-            label="Password"
-            type="password"
-            fullWidth
-            margin="normal"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button type="submit" variant="contained" sx={{ mt: 3 }}>
-            Login
-          </Button>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Welcome Back</h2>
+        <p>Sign in to your account</p>
 
-          {/* Sign Up Link */}
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography variant="body2">
-              Don't have an account?{' '}
-              <Link to="/register" style={{ textDecoration: 'none', color: '#1976d2' }}>
-                Sign Up
-              </Link>
-            </Typography>
-          </Box>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Email Address</label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              name="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              minLength="6"
+            />
+          </div>
+
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
         </form>
-      </Box>
-    </Container>
+
+        <div className="auth-footer">
+          <p>
+            Don't have an account?{' '}
+            <Link to="/register" className="auth-link">
+              Sign up here
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 
