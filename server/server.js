@@ -26,7 +26,7 @@ const settingsRoutes = require('./routes/settings');
 const reactionRoutes = require('./routes/social/reactions');
 const commentRoutes = require('./routes/social/comments');
 const shareRoutes = require('./routes/social/shares');
-const searchRoutes = require('./routes/search');
+
 
 // ✅ NEW ROUTES
 const storyRoutes = require('./routes/social/stories');
