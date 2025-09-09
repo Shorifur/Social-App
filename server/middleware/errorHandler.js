@@ -1,3 +1,4 @@
+// server/middleware/errorHandler.js
 const AppError = require('../utils/appError');
 
 const handleDuplicateFieldsDB = err => {
@@ -35,6 +36,7 @@ function errorHandler(err, req, res, next) {
   if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
 
   res.status(error.statusCode).json({
+    success: false,
     status: error.status,
     message: error.message,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })

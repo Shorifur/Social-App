@@ -3,12 +3,12 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../../middleware/auth');
 const StoryService = require('../../services/storyService');
-const upload = require('../../middleware/upload'); // Multer or cloud upload middleware
+const { uploadSingleStory, handleUploadError } = require('../../middleware/upload');
 
 /**
  * Create a new story (image/video with optional text, location, hashtags, mentions)
  */
-router.post('/', auth, upload.single('media'), async (req, res) => {
+router.post('/', auth, uploadSingleStory, handleUploadError, async (req, res) => {
   try {
     const { content, mediaType, duration, location, hashtags, mentions } = req.body;
 

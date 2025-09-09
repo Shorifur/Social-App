@@ -1,5 +1,5 @@
 // server/server.js
-const path = require('path'); // Must be first
+const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -8,34 +8,8 @@ const http = require('http');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-// Load environment variables
+// Load environment variables first
 dotenv.config();
-
-// === ROUTES ===
-const authRoutes = require('./routes/auth');
-const usersRouter = require('./routes/auth/users');
-const passwordResetRoutes = require('./routes/auth/passwordReset');
-const socialRoutes = require('./routes/social');
-const uploadsRouter = require('./routes/uploads');
-const userRoutes = require('./routes/user');
-const commentsRoutes = require('./routes/comments');
-const searchRoutes = require('./routes/search');
-const chatRoutes = require('./routes/chat');
-const messageRoutes = require('./routes/messages');
-const settingsRoutes = require('./routes/settings');
-const reactionRoutes = require('./routes/social/reactions');
-const commentRoutes = require('./routes/social/comments');
-const shareRoutes = require('./routes/social/shares');
-const reactionsRoutes = require('./routes/reactions');
-
-// ✅ NEW ROUTES
-const storyRoutes = require('./routes/social/stories');
-const callRoutes = require('./routes/calls');
-const adminRoutes = require('./routes/admin');
-
-// Middleware
-const authMiddleware = require('./middleware/auth');
-const errorHandler = require('./middleware/errorHandler');
 
 // Initialize express + HTTP server
 const app = express();
@@ -46,22 +20,23 @@ app.use(helmet());
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,
+    max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
+    message: 'Too many requests from this IP, please try again later.',
   })
 );
 
 // === BODY PARSERS ===
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // === CORS ===
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
   })
 );
@@ -71,7 +46,7 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Server is live!' });
 });
 
-// === HEALTH CHECK ENDPOINT ===
+// === HEALTH CHECK ===
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -81,46 +56,97 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// === API ROUTES ===
-app.use('/api/auth', authRoutes);
-app.use('/api/auth', passwordResetRoutes);
-app.use('/api/users', usersRouter);
-app.use('/api/social', socialRoutes);
-app.use('/api/upload', uploadsRouter);
-app.use('/api/user', userRoutes);
-app.use('/api/comments', commentsRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/social/reactions', reactionRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/shares', shareRoutes);
-app.use('/api', reactionsRoutes);
+// === IMPORT ROUTES SAFELY ===
+let authRoutes, usersRouter, passwordResetRoutes, socialRoutes, uploadsRouter;
+let userRoutes, commentsRoutes, searchRoutes, chatRoutes, messageRoutes;
+let settingsRoutes, reactionRoutes, commentRoutes, shareRoutes, reactionsRoutes;
+let storyRoutes, callRoutes, adminRoutes;
 
-// ✅ New API routes
-app.use('/api/stories', storyRoutes);
-app.use('/api/calls', callRoutes);
-app.use('/api/admin', adminRoutes);
+try {
+  authRoutes = require('./routes/auth');
+  usersRouter = require('./routes/auth/users');
+  passwordResetRoutes = require('./routes/auth/passwordReset');
+  socialRoutes = require('./routes/social');
+  uploadsRouter = require('./routes/uploads');
+  userRoutes = require('./routes/user');
+  commentsRoutes = require('./routes/comments');
+  searchRoutes = require('./routes/search');
+  chatRoutes = require('./routes/chat');
+  messageRoutes = require('./routes/messages');
+  settingsRoutes = require('./routes/settings');
+  reactionRoutes = require('./routes/social/reactions');
+  commentRoutes = require('./routes/social/comments');
+  shareRoutes = require('./routes/social/shares');
+  reactionsRoutes = require('./routes/reactions');
+  storyRoutes = require('./routes/social/stories');
+  callRoutes = require('./routes/calls');
+  adminRoutes = require('./routes/admin');
+} catch (error) {
+  console.error('❌ Error loading routes:', error.message);
+}
+
+// === USE ROUTES ===
+if (authRoutes) app.use('/api/auth', authRoutes);
+if (passwordResetRoutes) app.use('/api/auth', passwordResetRoutes);
+if (usersRouter) app.use('/api/users', usersRouter);
+if (socialRoutes) app.use('/api/social', socialRoutes);
+if (uploadsRouter) app.use('/api/upload', uploadsRouter);
+if (userRoutes) app.use('/api/user', userRoutes);
+if (commentsRoutes) app.use('/api/comments', commentsRoutes);
+if (searchRoutes) app.use('/api/search', searchRoutes);
+if (chatRoutes) app.use('/api/chat', chatRoutes);
+if (messageRoutes) app.use('/api/messages', messageRoutes);
+if (settingsRoutes) app.use('/api/settings', settingsRoutes);
+if (reactionRoutes) app.use('/api/social/reactions', reactionRoutes);
+if (commentRoutes) app.use('/api/comments', commentRoutes);
+if (shareRoutes) app.use('/api/shares', shareRoutes);
+if (reactionsRoutes) app.use('/api', reactionsRoutes);
+if (storyRoutes) app.use('/api/stories', storyRoutes);
+if (callRoutes) app.use('/api/calls', callRoutes);
+if (adminRoutes) app.use('/api/admin', adminRoutes);
 
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// === IMPORT MIDDLEWARE SAFELY ===
+let authMiddleware, errorHandler;
+try {
+  authMiddleware = require('./middleware/auth');
+  errorHandler = require('./middleware/errorHandler');
+} catch (error) {
+  console.error('❌ Error loading middleware:', error.message);
+}
+
 // Example protected route
-app.get('/api/protected', authMiddleware, (req, res) => {
-  res.json({
-    message: 'Protected data',
-    userId: req.user._id,
+if (authMiddleware) {
+  app.get('/api/protected', authMiddleware, (req, res) => {
+    res.json({
+      message: 'Protected data',
+      userId: req.user._id,
+    });
+  });
+}
+
+// Handle 404
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Route not found',
   });
 });
 
-// Handle 404 properly
-app.use((req, res, next) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-
 // Error handler
-app.use(errorHandler);
+if (errorHandler) {
+  app.use(errorHandler);
+} else {
+  app.use((err, req, res, next) => {
+    console.error('Error:', err.stack);
+    res.status(500).json({
+      success: false,
+      error: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
+    });
+  });
+}
 
 // === MONGODB CONNECTION ===
 mongoose
@@ -137,21 +163,37 @@ mongoose
   });
 
 // === PEERJS SERVER ===
-const peerServer = require('./utils/peerServer');
-peerServer(server);
-console.log('⚡ PeerJS server running on port 9000');
+try {
+  const createPeerServer = require('./utils/peerServer');
+  const peerServer = createPeerServer(server); // attach to HTTP server
+  if (peerServer) {
+    app.use('/peerjs', peerServer); // mount as middleware
+    console.log('⚡ PeerJS server running on path /peerjs');
+  }
+} catch (error) {
+  console.warn('⚠️ PeerJS server not started:', error.message);
+}
 
-// === SOCKET.IO (using centralized handler) ===
-const { initSocket } = require('./utils/socketHandler');
-initSocket(server);
+// === SOCKET.IO ===
+try {
+  const { initSocket } = require('./utils/socketHandler');
+  initSocket(server);
+  console.log('🔌 Socket.IO initialized');
+} catch (error) {
+  console.warn('⚠️ Socket.IO not initialized:', error.message);
+}
 
 // === SERVE CLIENT IN PRODUCTION ===
 if (process.env.NODE_ENV === 'production') {
   const clientBuildPath = path.join(__dirname, '../client/build');
-  app.use(express.static(clientBuildPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(clientBuildPath, 'index.html'));
-  });
+  if (require('fs').existsSync(clientBuildPath)) {
+    app.use(express.static(clientBuildPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve(clientBuildPath, 'index.html'));
+    });
+  } else {
+    console.warn('⚠️ Client build folder not found');
+  }
 }
 
 // Graceful shutdown
@@ -172,9 +214,28 @@ const shutdown = async () => {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
+// Handle unhandled rejections
+process.on('unhandledRejection', (err) => {
+  console.log('UNHANDLED REJECTION! 💥 Shutting down...');
+  console.log(err.name, err.message);
+  server.close(() => process.exit(1));
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
+  console.log(err.name, err.message);
+  process.exit(1);
+});
+
 // === START SERVER ===
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
+  console.log('='.repeat(50));
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📡 Client URL: ${process.env.CLIENT_URL || 'http://localhost:3000'}`);
+  console.log('='.repeat(50));
 });
+
+module.exports = app;
