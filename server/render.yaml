@@ -1,12 +1,13 @@
 # render.yaml
 
 services:
+  # Main API service
   - type: web
     name: social-platform-api
     env: node
     plan: free
     region: ohio
-    buildCommand: npm install
+    buildCommand: ./render-build.sh   # custom build script
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -16,7 +17,7 @@ services:
       - key: JWT_SECRET
         fromSecret: JWT_SECRET
       - key: CLIENT_URL
-        value: https://your-app.vercel.app
+        value: https://your-frontend-url.vercel.app
     healthCheckPath: /api/health
 
   # PeerJS server for WebRTC
