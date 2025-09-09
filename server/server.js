@@ -73,16 +73,16 @@ app.get('/api/health', (req, res) => {
 });
 
 // === IMPORT ROUTES SAFELY ===
-let authRoutes, usersRouter, passwordResetRoutes, socialRoutes, uploadsRouter;
-let userRoutes, commentsRoutes, searchRoutes, chatRoutes, messageRoutes;
-let settingsRoutes, reactionRoutes, commentRoutes, shareRoutes, reactionsRoutes;
-let storyRoutes, callRoutes, adminRoutes;
+let authRoutes, socialRoutes, uploadsRouter, userRoutes, commentsRoutes;
+let searchRoutes, chatRoutes, messageRoutes, settingsRoutes, reactionsRoutes;
+let callRoutes, adminRoutes;
 
 try {
-  authRoutes = require('./routes/auth');
-  usersRouter = require('./routes/auth/users');
-  passwordResetRoutes = require('./routes/auth/passwordReset');
-  socialRoutes = require('./routes/social');
+  // Main route imports (these use index.js files)
+  authRoutes = require('./routes/auth'); // Uses routes/auth/index.js
+  socialRoutes = require('./routes/social'); // Uses routes/social/index.js
+  
+  // Individual route imports
   uploadsRouter = require('./routes/uploads');
   userRoutes = require('./routes/user');
   commentsRoutes = require('./routes/comments');
@@ -90,11 +90,7 @@ try {
   chatRoutes = require('./routes/chat');
   messageRoutes = require('./routes/messages');
   settingsRoutes = require('./routes/settings');
-  reactionRoutes = require('./routes/social/reactions');
-  commentRoutes = require('./routes/social/comments');
-  shareRoutes = require('./routes/social/shares');
   reactionsRoutes = require('./routes/reactions');
-  storyRoutes = require('./routes/social/stories');
   callRoutes = require('./routes/calls');
   adminRoutes = require('./routes/admin');
 } catch (error) {
@@ -102,10 +98,8 @@ try {
 }
 
 // === USE ROUTES ===
-if (authRoutes) app.use('/api/auth', authRoutes);
-if (passwordResetRoutes) app.use('/api/auth', passwordResetRoutes);
-if (usersRouter) app.use('/api/users', usersRouter);
-if (socialRoutes) app.use('/api/social', socialRoutes);
+if (authRoutes) app.use('/api/auth', authRoutes); // Handles ALL auth routes
+if (socialRoutes) app.use('/api/social', socialRoutes); // Handles ALL social routes
 if (uploadsRouter) app.use('/api/upload', uploadsRouter);
 if (userRoutes) app.use('/api/user', userRoutes);
 if (commentsRoutes) app.use('/api/comments', commentsRoutes);
@@ -113,11 +107,7 @@ if (searchRoutes) app.use('/api/search', searchRoutes);
 if (chatRoutes) app.use('/api/chat', chatRoutes);
 if (messageRoutes) app.use('/api/messages', messageRoutes);
 if (settingsRoutes) app.use('/api/settings', settingsRoutes);
-if (reactionRoutes) app.use('/api/social/reactions', reactionRoutes);
-if (commentRoutes) app.use('/api/comments', commentRoutes);
-if (shareRoutes) app.use('/api/shares', shareRoutes);
 if (reactionsRoutes) app.use('/api', reactionsRoutes);
-if (storyRoutes) app.use('/api/stories', storyRoutes);
 if (callRoutes) app.use('/api/calls', callRoutes);
 if (adminRoutes) app.use('/api/admin', adminRoutes);
 
@@ -175,7 +165,7 @@ mongoose
 // === PEERJS SERVER ===
 try {
   const createPeerServer = require('./utils/peerServer');
-  const peerServer = createPeerServer(server); // attach to HTTP server
+  const peerServer = createPeerServer(server);
   if (peerServer) {
     app.use('/peerjs', peerServer);
     console.log('⚡ PeerJS server running on path /peerjs');
