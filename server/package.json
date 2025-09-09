@@ -27,7 +27,7 @@
     "helmet": "^7.0.0",
     "express-rate-limit": "^6.10.0",
     "peer": "^0.6.1",
-    "debug": "^4.3.5"  // added explicitly to prevent missing ./common module
+    "debug": "^4.3.5" 
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
