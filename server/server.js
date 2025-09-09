@@ -1,4 +1,12 @@
 // server/server.js
+
+// Clear module cache for Express to prevent corruption in production
+if (process.env.NODE_ENV === 'production') {
+  Object.keys(require.cache).forEach((key) => {
+    delete require.cache[key];
+  });
+}
+
 const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
@@ -8,10 +16,10 @@ const http = require('http');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-// Load environment variables first
+// Load environment variables
 dotenv.config();
 
-// Initialize express + HTTP server
+// Initialize Express + HTTP server
 const app = express();
 const server = http.createServer(app);
 
@@ -120,19 +128,13 @@ try {
 // Example protected route
 if (authMiddleware) {
   app.get('/api/protected', authMiddleware, (req, res) => {
-    res.json({
-      message: 'Protected data',
-      userId: req.user._id,
-    });
+    res.json({ message: 'Protected data', userId: req.user._id });
   });
 }
 
 // Handle 404
 app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Route not found',
-  });
+  res.status(404).json({ success: false, error: 'Route not found' });
 });
 
 // Error handler
@@ -167,7 +169,7 @@ try {
   const createPeerServer = require('./utils/peerServer');
   const peerServer = createPeerServer(server); // attach to HTTP server
   if (peerServer) {
-    app.use('/peerjs', peerServer); // mount as middleware
+    app.use('/peerjs', peerServer);
     console.log('⚡ PeerJS server running on path /peerjs');
   }
 } catch (error) {
