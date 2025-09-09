@@ -16,7 +16,7 @@
     "install-all": "npm install && cd server && npm install && cd ../client && npm install"
   },
   "dependencies": {
-    "express-validator": "^7.2.1",
+    "express-validator": "^7.0.1",
     "styled-components": "^6.1.19"
   },
   "devDependencies": {

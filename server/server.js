@@ -1,12 +1,20 @@
 // server/server.js
 
-// Clear module cache for Express to prevent corruption in production
+// === CLEAR MODULE CACHE TO PREVENT CORRUPTED MODULES IN PRODUCTION ===
 if (process.env.NODE_ENV === 'production') {
-  Object.keys(require.cache).forEach((key) => {
-    delete require.cache[key];
+  // Clear require cache for critical modules
+  const criticalModules = ['express', 'mongoose', 'cors', 'helmet'];
+  criticalModules.forEach((moduleName) => {
+    try {
+      const modulePath = require.resolve(moduleName);
+      delete require.cache[modulePath];
+    } catch (err) {
+      console.warn(`⚠️ Could not clear cache for module ${moduleName}:`, err.message);
+    }
   });
 }
 
+// === IMPORT MODULES ===
 const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');

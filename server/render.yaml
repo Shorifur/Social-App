@@ -1,5 +1,3 @@
-# render.yaml
-
 services:
   # Main API service
   - type: web
@@ -7,7 +5,7 @@ services:
     env: node
     plan: free
     region: ohio
-    buildCommand: ./render-build.sh   # custom build script
+    buildCommand: chmod +x render-build.sh && ./render-build.sh
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -18,6 +16,8 @@ services:
         fromSecret: JWT_SECRET
       - key: CLIENT_URL
         value: https://your-frontend-url.vercel.app
+      - key: PORT
+        value: 10000
     healthCheckPath: /api/health
 
   # PeerJS server for WebRTC
