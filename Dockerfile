@@ -1,30 +1,39 @@
-# Stage 1: Build React app
-FROM node:18-alpine AS client-build
-WORKDIR /app/client
-COPY client/package*.json ./
-RUN npm ci
-COPY client/ ./
-RUN npm run build
+# === BUILD STAGE ===
+FROM node:18-alpine AS builder
 
-# Stage 2: Build backend image
-FROM node:18-alpine
 WORKDIR /app
 
-# Copy server package.json and install dependencies
-COPY server/package*.json ./
-RUN npm ci --only=production
+# Install dependencies for client
+COPY client/package*.json ./client/
+RUN cd client && npm ci
 
-# Copy server source code
-COPY server/ ./
+# Build frontend
+COPY client/ ./client
+RUN cd client && npm run build
 
-# Copy React build from previous stage
-COPY --from=client-build /app/client/build ./client/build
+# Install dependencies for server
+COPY server/package*.json ./server/
+RUN cd server && npm ci --only=production
 
-# Create uploads folder
-RUN mkdir -p uploads
+# Copy server code
+COPY server/ ./server
+
+# === PRODUCTION IMAGE ===
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy server code
+COPY --from=builder /app/server ./server
+
+# Copy client build into server
+COPY --from=builder /app/client/build ./server/client/build
+
+# Set working directory
+WORKDIR /app/server
 
 # Expose port
 EXPOSE 5000
 
-# Start backend server
-CMD ["node", "server.js"]
+# Start server
+CMD ["npm", "start"]

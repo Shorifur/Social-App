@@ -1,4 +1,5 @@
 // server/server.js
+
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
@@ -58,7 +59,7 @@ const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
-// === IMPORT ROUTES ===
+// === DYNAMIC ROUTE LOADER ===
 const loadRoutes = (routePath, basePath) => {
   try {
     const router = require(routePath);
@@ -68,21 +69,25 @@ const loadRoutes = (routePath, basePath) => {
   }
 };
 
-// Main route imports
-loadRoutes('./routes/auth', '/api/auth');
-loadRoutes('./routes/social', '/api/social');
-loadRoutes('./routes/uploads', '/api/upload');
-loadRoutes('./routes/user', '/api/user');
-loadRoutes('./routes/comments', '/api/comments');
-loadRoutes('./routes/search', '/api/search');
-loadRoutes('./routes/chat', '/api/chat');
-loadRoutes('./routes/messages', '/api/messages');
-loadRoutes('./routes/settings', '/api/settings');
-loadRoutes('./routes/reactions', '/api');
-loadRoutes('./routes/calls', '/api/calls');
-loadRoutes('./routes/admin', '/api/admin');
+// Load all routes
+const routes = [
+  { path: './routes/auth', base: '/api/auth' },
+  { path: './routes/social', base: '/api/social' },
+  { path: './routes/uploads', base: '/api/upload' },
+  { path: './routes/user', base: '/api/user' },
+  { path: './routes/comments', base: '/api/comments' },
+  { path: './routes/search', base: '/api/search' },
+  { path: './routes/chat', base: '/api/chat' },
+  { path: './routes/messages', base: '/api/messages' },
+  { path: './routes/settings', base: '/api/settings' },
+  { path: './routes/reactions', base: '/api' },
+  { path: './routes/calls', base: '/api/calls' },
+  { path: './routes/admin', base: '/api/admin' },
+];
 
-// === IMPORT MIDDLEWARE ===
+routes.forEach((r) => loadRoutes(r.path, r.base));
+
+// === MIDDLEWARE ===
 let authMiddleware, errorHandler;
 try {
   authMiddleware = require('./middleware/auth');
@@ -176,6 +181,7 @@ const shutdown = async () => {
     process.exit(1);
   }
 };
+
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
@@ -183,6 +189,7 @@ process.on('unhandledRejection', (err) => {
   console.error('UNHANDLED REJECTION:', err.name, err.message);
   server.close(() => process.exit(1));
 });
+
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err.name, err.message);
   process.exit(1);
