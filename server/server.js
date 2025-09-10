@@ -1,5 +1,3 @@
-// server/server.js
-
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
@@ -15,13 +13,17 @@ dotenv.config();
 
 // Initialize Express + HTTP server
 const app = express();
+
+// ✅ Trust proxy for rate limiting and IP detection
+app.set('trust proxy', true);
+
 const server = http.createServer(app);
 
 // === SECURITY MIDDLEWARE ===
 app.use(helmet());
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
     max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
@@ -69,7 +71,6 @@ const loadRoutes = (routePath, basePath) => {
   }
 };
 
-// Load all routes
 const routes = [
   { path: './routes/auth', base: '/api/auth' },
   { path: './routes/social', base: '/api/social' },
@@ -96,17 +97,14 @@ try {
   console.warn('⚠️ Middleware not loaded:', err.message);
 }
 
-// Example protected route
 if (authMiddleware) {
   app.get('/api/protected', authMiddleware, (req, res) => {
     res.json({ message: 'Protected data', userId: req.user._id });
   });
 }
 
-// Handle 404
 app.use('*', (req, res) => res.status(404).json({ success: false, error: 'Route not found' }));
 
-// Error handler
 if (errorHandler) {
   app.use(errorHandler);
 } else {
