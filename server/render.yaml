@@ -1,11 +1,10 @@
 services:
-  # Main API service with Docker
   - type: web
     name: social-platform-api
     plan: free
     region: ohio
     docker:
-      dockerfilePath: Dockerfile   # <-- fixed path
+      dockerfilePath: Dockerfile   # ✅ root-level
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,15 +17,3 @@ services:
       - key: PORT
         value: 10000
     healthCheckPath: /api/health
-
-  # PeerJS server for WebRTC
-  - type: web
-    name: social-platform-peerjs
-    env: node
-    plan: free
-    region: ohio
-    buildCommand: npm install
-    startCommand: npx peerjs --port $PORT --key peerjs --path /peerjs
-    envVars:
-      - key: PORT
-        value: 9000
