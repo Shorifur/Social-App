@@ -1,25 +1,26 @@
 FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy only server package files
 COPY server/package*.json ./
 
-# Install dependencies
+# Install dependencies (production only)
 RUN npm ci --only=production --no-audit --no-fund
 
-# Copy source code
+# Copy the server source code
 COPY server/ .
 
-# Create uploads directory
+# Create uploads directory (in container)
 RUN mkdir -p uploads
 
-# Expose port
+# Expose backend port
 EXPOSE 10000
 
-# Health check
+# Health check endpoint
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:10000/api/health || exit 1
+  CMD wget --quiet --tries=1 --spider http://localhost:10000/api/health || exit 1
 
-# Start the application
+# Start backend
 CMD ["npm", "start"]
