@@ -1,39 +1,30 @@
-# === BUILD STAGE ===
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-
-# Install dependencies for client
-COPY client/package*.json ./client/
-RUN cd client && npm ci
-
-# Build frontend
-COPY client/ ./client
-RUN cd client && npm run build
-
-# Install dependencies for server
-COPY server/package*.json ./server/
-RUN cd server && npm ci --only=production
-
-# Copy server code
-COPY server/ ./server
-
-# === PRODUCTION IMAGE ===
+# Use Node.js 18
 FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
 
-# Copy server code
-COPY --from=builder /app/server ./server
+# Copy server package files
+COPY server/package*.json ./server/
 
-# Copy client build into server
-COPY --from=builder /app/client/build ./server/client/build
+# Install server dependencies
+RUN npm ci --prefix ./server --only=production --no-audit --no-fund
 
-# Set working directory
-WORKDIR /app/server
+# Copy server source code
+COPY server/ ./server
 
-# Expose port
+# Copy client build (if exists)
+COPY client/build ./client/build
+
+# Create uploads folder
+RUN mkdir -p /app/server/uploads
+
+# Expose server port
 EXPOSE 5000
 
-# Start server
-CMD ["npm", "start"]
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:5000/api/health || exit 1
+
+# Start the server
+CMD ["node", "server/server.js"]
