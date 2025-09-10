@@ -1,30 +1,30 @@
-# Use Node.js 18 Alpine
-FROM node:18-alpine
+# Stage 1: Build React app
+FROM node:18-alpine AS client-build
+WORKDIR /app/client
+COPY client/package*.json ./
+RUN npm ci
+COPY client/ ./
+RUN npm run build
 
-# Set working directory
+# Stage 2: Build backend image
+FROM node:18-alpine
 WORKDIR /app
 
-# Copy server package files
+# Copy server package.json and install dependencies
 COPY server/package*.json ./
-
-# Install dependencies (production only)
-RUN npm ci --only=production --no-audit --no-fund
+RUN npm ci --only=production
 
 # Copy server source code
-COPY server/ .
+COPY server/ ./
 
-# Copy React build (make sure you've already run `npm run build` inside client)
-COPY client/build ./client/build
+# Copy React build from previous stage
+COPY --from=client-build /app/client/build ./client/build
 
 # Create uploads folder
 RUN mkdir -p uploads
 
-# Expose backend port
+# Expose port
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:5000/api/health || exit 1
-
-# Start server
-CMD ["npm", "start"]
+# Start backend server
+CMD ["node", "server.js"]
