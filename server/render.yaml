@@ -1,12 +1,11 @@
 services:
-  # Main API service
+  # Main API service with Docker
   - type: web
     name: social-platform-api
-    env: node
     plan: free
     region: ohio
-    buildCommand: chmod +x render-build.sh && ./render-build.sh
-    startCommand: npm start
+    docker:
+      dockerfilePath: server/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production

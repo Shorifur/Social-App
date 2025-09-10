@@ -2,11 +2,11 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better caching
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci --only=production --no-audit --no-fund
 
 # Copy source code
 COPY . .
@@ -14,6 +14,12 @@ COPY . .
 # Create uploads directory
 RUN mkdir -p uploads
 
-EXPOSE 5000
+# Expose port
+EXPOSE 10000
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:10000/api/health || exit 1
+
+# Start the application
 CMD ["npm", "start"]

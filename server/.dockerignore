@@ -6,3 +6,6 @@ README.md
 .env
 .nyc_output
 coverage
+.DS_Store
+build
+dist
