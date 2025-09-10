@@ -1,21 +1,6 @@
 // server/server.js
-
-// === CLEAR MODULE CACHE TO PREVENT CORRUPTED MODULES IN PRODUCTION ===
-if (process.env.NODE_ENV === 'production') {
-  // Clear require cache for critical modules
-  const criticalModules = ['express', 'mongoose', 'cors', 'helmet'];
-  criticalModules.forEach((moduleName) => {
-    try {
-      const modulePath = require.resolve(moduleName);
-      delete require.cache[modulePath];
-    } catch (err) {
-      console.warn(`⚠️ Could not clear cache for module ${moduleName}:`, err.message);
-    }
-  });
-}
-
-// === IMPORT MODULES ===
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -57,12 +42,8 @@ app.use(
   })
 );
 
-// === TEST ENDPOINT ===
-app.get('/test', (req, res) => {
-  res.json({ message: 'Server is live!' });
-});
-
-// === HEALTH CHECK ===
+// === TEST & HEALTH ENDPOINTS ===
+app.get('/test', (req, res) => res.json({ message: 'Server is live!' }));
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -72,55 +53,42 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// === IMPORT ROUTES SAFELY ===
-let authRoutes, socialRoutes, uploadsRouter, userRoutes, commentsRoutes;
-let searchRoutes, chatRoutes, messageRoutes, settingsRoutes, reactionsRoutes;
-let callRoutes, adminRoutes;
+// === CREATE UPLOADS FOLDER IF MISSING ===
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
 
-try {
-  // Main route imports (these use index.js files)
-  authRoutes = require('./routes/auth'); // Uses routes/auth/index.js
-  socialRoutes = require('./routes/social'); // Uses routes/social/index.js
-  
-  // Individual route imports
-  uploadsRouter = require('./routes/uploads');
-  userRoutes = require('./routes/user');
-  commentsRoutes = require('./routes/comments');
-  searchRoutes = require('./routes/search');
-  chatRoutes = require('./routes/chat');
-  messageRoutes = require('./routes/messages');
-  settingsRoutes = require('./routes/settings');
-  reactionsRoutes = require('./routes/reactions');
-  callRoutes = require('./routes/calls');
-  adminRoutes = require('./routes/admin');
-} catch (error) {
-  console.error('❌ Error loading routes:', error.message);
-}
+// === IMPORT ROUTES ===
+const loadRoutes = (routePath, basePath) => {
+  try {
+    const router = require(routePath);
+    app.use(basePath, router);
+  } catch (err) {
+    console.warn(`⚠️ Could not load routes ${routePath}:`, err.message);
+  }
+};
 
-// === USE ROUTES ===
-if (authRoutes) app.use('/api/auth', authRoutes); // Handles ALL auth routes
-if (socialRoutes) app.use('/api/social', socialRoutes); // Handles ALL social routes
-if (uploadsRouter) app.use('/api/upload', uploadsRouter);
-if (userRoutes) app.use('/api/user', userRoutes);
-if (commentsRoutes) app.use('/api/comments', commentsRoutes);
-if (searchRoutes) app.use('/api/search', searchRoutes);
-if (chatRoutes) app.use('/api/chat', chatRoutes);
-if (messageRoutes) app.use('/api/messages', messageRoutes);
-if (settingsRoutes) app.use('/api/settings', settingsRoutes);
-if (reactionsRoutes) app.use('/api', reactionsRoutes);
-if (callRoutes) app.use('/api/calls', callRoutes);
-if (adminRoutes) app.use('/api/admin', adminRoutes);
+// Main route imports
+loadRoutes('./routes/auth', '/api/auth');
+loadRoutes('./routes/social', '/api/social');
+loadRoutes('./routes/uploads', '/api/upload');
+loadRoutes('./routes/user', '/api/user');
+loadRoutes('./routes/comments', '/api/comments');
+loadRoutes('./routes/search', '/api/search');
+loadRoutes('./routes/chat', '/api/chat');
+loadRoutes('./routes/messages', '/api/messages');
+loadRoutes('./routes/settings', '/api/settings');
+loadRoutes('./routes/reactions', '/api');
+loadRoutes('./routes/calls', '/api/calls');
+loadRoutes('./routes/admin', '/api/admin');
 
-// Static uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// === IMPORT MIDDLEWARE SAFELY ===
+// === IMPORT MIDDLEWARE ===
 let authMiddleware, errorHandler;
 try {
   authMiddleware = require('./middleware/auth');
   errorHandler = require('./middleware/errorHandler');
-} catch (error) {
-  console.error('❌ Error loading middleware:', error.message);
+} catch (err) {
+  console.warn('⚠️ Middleware not loaded:', err.message);
 }
 
 // Example protected route
@@ -131,16 +99,14 @@ if (authMiddleware) {
 }
 
 // Handle 404
-app.use('*', (req, res) => {
-  res.status(404).json({ success: false, error: 'Route not found' });
-});
+app.use('*', (req, res) => res.status(404).json({ success: false, error: 'Route not found' }));
 
 // Error handler
 if (errorHandler) {
   app.use(errorHandler);
 } else {
   app.use((err, req, res, next) => {
-    console.error('Error:', err.stack);
+    console.error(err.stack);
     res.status(500).json({
       success: false,
       error: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
@@ -170,8 +136,8 @@ try {
     app.use('/peerjs', peerServer);
     console.log('⚡ PeerJS server running on path /peerjs');
   }
-} catch (error) {
-  console.warn('⚠️ PeerJS server not started:', error.message);
+} catch (err) {
+  console.warn('⚠️ PeerJS server not started:', err.message);
 }
 
 // === SOCKET.IO ===
@@ -179,26 +145,26 @@ try {
   const { initSocket } = require('./utils/socketHandler');
   initSocket(server);
   console.log('🔌 Socket.IO initialized');
-} catch (error) {
-  console.warn('⚠️ Socket.IO not initialized:', error.message);
+} catch (err) {
+  console.warn('⚠️ Socket.IO not initialized:', err.message);
 }
 
 // === SERVE CLIENT IN PRODUCTION ===
 if (process.env.NODE_ENV === 'production') {
   const clientBuildPath = path.join(__dirname, '../client/build');
-  if (require('fs').existsSync(clientBuildPath)) {
+  if (fs.existsSync(clientBuildPath)) {
     app.use(express.static(clientBuildPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.resolve(clientBuildPath, 'index.html'));
+      res.sendFile(path.join(clientBuildPath, 'index.html'));
     });
   } else {
     console.warn('⚠️ Client build folder not found');
   }
 }
 
-// Graceful shutdown
+// === GRACEFUL SHUTDOWN ===
 const shutdown = async () => {
-  console.log('🛑 Received shutdown signal: closing server');
+  console.log('🛑 Shutting down server...');
   try {
     await mongoose.disconnect();
     server.close(() => {
@@ -210,21 +176,15 @@ const shutdown = async () => {
     process.exit(1);
   }
 };
-
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-// Handle unhandled rejections
 process.on('unhandledRejection', (err) => {
-  console.log('UNHANDLED REJECTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
+  console.error('UNHANDLED REJECTION:', err.name, err.message);
   server.close(() => process.exit(1));
 });
-
-// Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-  console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
+  console.error('UNCAUGHT EXCEPTION:', err.name, err.message);
   process.exit(1);
 });
 
