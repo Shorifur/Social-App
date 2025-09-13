@@ -1,17 +1,28 @@
-// In client/src/pages/Settings.js
+// client/src/pages/Settings.js
 import React, { useState, useEffect } from 'react';
-import { 
-  getSettings, 
-  updateSettings, 
-  updateProfile, 
+import {
+  getSettings,
+  updateSettings,
+  updateProfile,
   changePassword,
   updateProfilePicture,
   updateCoverPhoto
 } from '../api/settings';
 import { useAuth } from '../hooks/useAuth';
 
+// Import your settings components
+import GeneralSettings from '../components/settings/GeneralSettings';
+import PrivacySettings from '../components/settings/PrivacySettings';
+import DatingSettings from '../components/settings/DatingSettings';
+import BlindDatingMatch from '../components/settings/BlindDatingMatch';
+import NotificationSettings from '../components/settings/NotificationSettings';
+import AccountSettings from '../components/settings/AccountSettings';
+import AppearanceSettings from '../components/settings/AppearanceSettings';
+
+import './Settings.css';
+
 const Settings = () => {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('general');
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(false);
   const { user, updateUser } = useAuth();
@@ -53,92 +64,92 @@ const Settings = () => {
     }
   };
 
+  const tabs = [
+    { id: 'general', label: 'General', icon: '⚙️' },
+    { id: 'account', label: 'Account', icon: '👤' },
+    { id: 'privacy', label: 'Privacy', icon: '🔒' },
+    { id: 'notifications', label: 'Notifications', icon: '🔔' },
+    { id: 'appearance', label: 'Appearance', icon: '🎨' },
+    { id: 'dating', label: 'Dating Preferences', icon: '💕' },
+    { id: 'blind-dating', label: 'Blind Dating', icon: '🎭' }
+  ];
+
   return (
-    <div className="settings-page">
-      <div className="settings-container">
+    <div className="settings-container">
+      <div className="settings-header">
+        <h1>Settings</h1>
+        <p>Manage your account preferences and privacy settings</p>
+      </div>
+
+      <div className="settings-content">
         <div className="settings-sidebar">
-          <h3>Settings</h3>
-          <button 
-            className={activeTab === 'profile' ? 'active' : ''}
-            onClick={() => setActiveTab('profile')}
-          >
-            Profile
-          </button>
-          <button 
-            className={activeTab === 'privacy' ? 'active' : ''}
-            onClick={() => setActiveTab('privacy')}
-          >
-            Privacy
-          </button>
-          <button 
-            className={activeTab === 'notifications' ? 'active' : ''}
-            onClick={() => setActiveTab('notifications')}
-          >
-            Notifications
-          </button>
-          <button 
-            className={activeTab === 'security' ? 'active' : ''}
-            onClick={() => setActiveTab('security')}
-          >
-            Security
-          </button>
-          <button 
-            className={activeTab === 'appearance' ? 'active' : ''}
-            onClick={() => setActiveTab('appearance')}
-          >
-            Appearance
-          </button>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <span className="tab-icon">{tab.icon}</span>
+              <span className="tab-label">{tab.label}</span>
+            </button>
+          ))}
         </div>
 
-        <div className="settings-content">
-          {activeTab === 'profile' && (
-            <ProfileSettings 
-              user={user} 
-              onUpdate={handleProfileUpdate} 
+        <div className="settings-main">
+          {activeTab === 'general' && (
+            <GeneralSettings
+              settings={settings}
+              onUpdate={handleSettingsUpdate}
               loading={loading}
             />
           )}
-          
+          {activeTab === 'account' && (
+            <AccountSettings
+              user={user}
+              onUpdate={handleProfileUpdate}
+              onPasswordChange={changePassword}
+              onUpdateProfilePicture={updateProfilePicture}
+              onUpdateCoverPhoto={updateCoverPhoto}
+              loading={loading}
+            />
+          )}
           {activeTab === 'privacy' && settings && (
-            <PrivacySettings 
-              settings={settings} 
-              onUpdate={handleSettingsUpdate} 
+            <PrivacySettings
+              settings={settings}
+              onUpdate={handleSettingsUpdate}
               loading={loading}
             />
           )}
-          
-          {/* Add other settings tabs */}
+          {activeTab === 'notifications' && settings && (
+            <NotificationSettings
+              settings={settings}
+              onUpdate={handleSettingsUpdate}
+              loading={loading}
+            />
+          )}
+          {activeTab === 'appearance' && settings && (
+            <AppearanceSettings
+              settings={settings}
+              onUpdate={handleSettingsUpdate}
+              loading={loading}
+            />
+          )}
+          {activeTab === 'dating' && (
+            <DatingSettings
+              settings={settings}
+              onUpdate={handleSettingsUpdate}
+              loading={loading}
+            />
+          )}
+          {activeTab === 'blind-dating' && (
+            <BlindDatingMatch
+              settings={settings}
+              onUpdate={handleSettingsUpdate}
+              loading={loading}
+            />
+          )}
         </div>
       </div>
-    </div>
-  );
-};
-
-// Example Profile Settings Component
-const ProfileSettings = ({ user, onUpdate, loading }) => {
-  const [formData, setFormData] = useState({
-    firstName: user.profile.firstName || '',
-    lastName: user.profile.lastName || '',
-    bio: user.profile.bio || '',
-    website: user.profile.website || '',
-    location: user.profile.location || '',
-    birthDate: user.profile.birthDate || ''
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onUpdate(formData);
-  };
-
-  return (
-    <div className="settings-tab">
-      <h2>Profile Settings</h2>
-      <form onSubmit={handleSubmit}>
-        {/* Form fields for profile settings */}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Saving...' : 'Save Changes'}
-        </button>
-      </form>
     </div>
   );
 };

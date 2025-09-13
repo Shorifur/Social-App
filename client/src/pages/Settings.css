@@ -1,0 +1,160 @@
+/* src/pages/Settings.css */
+.settings-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.settings-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.settings-header h1 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.settings-header p {
+  color: #666;
+  font-size: 16px;
+}
+
+.settings-content {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.settings-sidebar {
+  background: #f8f9fa;
+  padding: 20px 0;
+}
+
+.settings-tab {
+  width: 100%;
+  padding: 15px 20px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.settings-tab:hover {
+  background: #e9ecef;
+}
+
+.settings-tab.active {
+  background: #4361ee;
+  color: white;
+  border-left-color: #3a0ca3;
+}
+
+.tab-icon {
+  font-size: 18px;
+}
+
+.tab-label {
+  font-weight: 600;
+}
+
+.settings-main {
+  padding: 30px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.settings-section h2 {
+  color: #333;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.settings-group {
+  margin-bottom: 20px;
+}
+
+.settings-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.settings-group input[type="text"],
+.settings-group input[type="email"],
+.settings-group input[type="tel"],
+.settings-group select {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.save-btn {
+  padding: 12px 25px;
+  background: #4361ee;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.save-btn:hover {
+  background: #3a0ca3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .settings-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .settings-sidebar {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px;
+  }
+  
+  .settings-tab {
+    flex: 0 0 auto;
+    border-left: none;
+    border-bottom: 4px solid transparent;
+    text-align: center;
+    flex-direction: column;
+    padding: 10px 15px;
+  }
+  
+  .settings-tab.active {
+    border-left-color: transparent;
+    border-bottom-color: #3a0ca3;
+  }
+}

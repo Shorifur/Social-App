@@ -16,7 +16,6 @@ const CreatePost = ({ onPostCreated }) => {
     const files = Array.from(e.target.files);
     const validImages = files.filter((file) => file.type.startsWith('image/'));
     if (validImages.length === 0) return;
-
     setImages((prev) => [...prev, ...validImages]);
   };
 
@@ -28,6 +27,8 @@ const CreatePost = ({ onPostCreated }) => {
   // Submit post
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!content.trim() && images.length === 0) return;
+
     setLoading(true);
     setError('');
 
@@ -37,12 +38,11 @@ const CreatePost = ({ onPostCreated }) => {
       images.forEach((img) => formData.append('images', img));
 
       const response = await axios.post('/api/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       if (response.data) {
+        // Reset state
         setContent('');
         setImages([]);
         if (onPostCreated) {
@@ -77,7 +77,7 @@ const CreatePost = ({ onPostCreated }) => {
           placeholder="Share something with your community..."
           maxLength={1000}
           rows={3}
-          required
+          disabled={loading}
         />
 
         {/* Image previews */}
@@ -94,6 +94,7 @@ const CreatePost = ({ onPostCreated }) => {
                   type="button"
                   className="remove-image-btn"
                   onClick={() => removeImage(index)}
+                  disabled={loading}
                 >
                   ×
                 </button>
@@ -116,6 +117,7 @@ const CreatePost = ({ onPostCreated }) => {
               multiple
               onChange={handleImageChange}
               className="file-input"
+              disabled={loading}
             />
           </div>
 
