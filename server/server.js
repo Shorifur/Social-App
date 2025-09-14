@@ -1,3 +1,4 @@
+// server.js
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
@@ -8,45 +9,73 @@ const http = require('http');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
+// Utils
+const socketHandler = require('./utils/socketHandler');
+const createPeerServer = require('./utils/peerServer');
+
 // Load environment variables
 dotenv.config();
 
 // Initialize Express + HTTP server
 const app = express();
-
-// ✅ Trust proxy for rate limiting and IP detection
-app.set('trust proxy', true);
-
 const server = http.createServer(app);
 
-// === SECURITY MIDDLEWARE ===
+// ✅ Trust proxy for reverse proxies (Render/Heroku)
+app.set('trust proxy', true);
+
+// ===============================
+// Security Middleware
+// ===============================
 app.use(helmet());
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 1000,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // limit per IP
     standardHeaders: true,
     legacyHeaders: false,
     message: 'Too many requests from this IP, please try again later.',
   })
 );
 
-// === BODY PARSERS ===
+// ===============================
+// Body Parsers
+// ===============================
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// === CORS ===
+// ===============================
+// CORS Configuration
+// ===============================
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://your-vercel-app.vercel.app',
+  process.env.CLIENT_URL, // from .env
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`❌ CORS blocked for origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    credentials: true,
   })
 );
 
-// === TEST & HEALTH ENDPOINTS ===
+// Preflight
+app.options('*', cors());
+
+// ===============================
+// Test & Health Endpoints
+// ===============================
 app.get('/test', (req, res) => res.json({ message: 'Server is live!' }));
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -56,21 +85,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// === CREATE UPLOADS FOLDER IF MISSING ===
+// ===============================
+// Uploads (ensure folder exists)
+// ===============================
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
-// === DYNAMIC ROUTE LOADER ===
-const loadRoutes = (routePath, basePath) => {
-  try {
-    const router = require(routePath);
-    app.use(basePath, router);
-  } catch (err) {
-    console.warn(`⚠️ Could not load routes ${routePath}:`, err.message);
-  }
-};
-
+// ===============================
+// Dynamic Route Loader
+// ===============================
 const routes = [
   { path: './routes/auth', base: '/api/auth' },
   { path: './routes/social', base: '/api/social' },
@@ -86,9 +110,18 @@ const routes = [
   { path: './routes/admin', base: '/api/admin' },
 ];
 
-routes.forEach((r) => loadRoutes(r.path, r.base));
+routes.forEach((r) => {
+  try {
+    const router = require(r.path);
+    app.use(r.base, router);
+  } catch (err) {
+    console.warn(`⚠️ Could not load routes ${r.path}:`, err.message);
+  }
+});
 
-// === MIDDLEWARE ===
+// ===============================
+// Middleware
+// ===============================
 let authMiddleware, errorHandler;
 try {
   authMiddleware = require('./middleware/auth');
@@ -103,21 +136,21 @@ if (authMiddleware) {
   });
 }
 
+// 404 handler
 app.use('*', (req, res) => res.status(404).json({ success: false, error: 'Route not found' }));
 
-if (errorHandler) {
-  app.use(errorHandler);
-} else {
-  app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-      success: false,
-      error: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
-    });
+// Error handler
+app.use(errorHandler || ((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    error: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
   });
-}
+}));
 
-// === MONGODB CONNECTION ===
+// ===============================
+// MongoDB Connection
+// ===============================
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
@@ -131,9 +164,10 @@ mongoose
     process.exit(1);
   });
 
-// === PEERJS SERVER ===
+// ===============================
+// PeerJS Server
+// ===============================
 try {
-  const createPeerServer = require('./utils/peerServer');
   const peerServer = createPeerServer(server);
   if (peerServer) {
     app.use('/peerjs', peerServer);
@@ -143,16 +177,19 @@ try {
   console.warn('⚠️ PeerJS server not started:', err.message);
 }
 
-// === SOCKET.IO ===
+// ===============================
+// Socket.IO
+// ===============================
 try {
-  const { initSocket } = require('./utils/socketHandler');
-  initSocket(server);
+  socketHandler.initSocket(server);
   console.log('🔌 Socket.IO initialized');
 } catch (err) {
   console.warn('⚠️ Socket.IO not initialized:', err.message);
 }
 
-// === SERVE CLIENT IN PRODUCTION ===
+// ===============================
+// Serve Client in Production
+// ===============================
 if (process.env.NODE_ENV === 'production') {
   const clientBuildPath = path.join(__dirname, '../client/build');
   if (fs.existsSync(clientBuildPath)) {
@@ -165,7 +202,9 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-// === GRACEFUL SHUTDOWN ===
+// ===============================
+// Graceful Shutdown
+// ===============================
 const shutdown = async () => {
   console.log('🛑 Shutting down server...');
   try {
@@ -193,7 +232,9 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-// === START SERVER ===
+// ===============================
+// Start Server
+// ===============================
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log('='.repeat(50));
