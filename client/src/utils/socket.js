@@ -1,24 +1,34 @@
 // client/src/utils/socket.js
 import { io } from 'socket.io-client';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
-// Global socket instance (not auto-connected)
-let socket = io(API_URL, {
-  autoConnect: false,
-  transports: ['websocket'], // force websocket for stability
-});
+// Global socket instance (lazy initialized, not auto-connected)
+let socket = null;
 
-// Connect with token
+/**
+ * Connects the socket with JWT authentication.
+ * Reuses the existing socket if already connected.
+ */
 export const connectSocket = (token) => {
-  if (!token) return null;
+  if (!token) {
+    console.error('❌ No authentication token found');
+    return null;
+  }
 
-  // Disconnect first if already connected
+  // If already connected, disconnect first
   if (socket && socket.connected) {
     disconnectSocket();
   }
 
-  socket.auth = { token };
+  // Create socket instance
+  socket = io(SOCKET_URL, {
+    auth: { token },
+    autoConnect: false,
+    transports: ['websocket'], // prefer websocket for stability
+  });
+
+  // Connect now
   socket.connect();
 
   // Core events
@@ -37,15 +47,24 @@ export const connectSocket = (token) => {
   return socket;
 };
 
-// Disconnect socket safely
+/**
+ * Safely disconnects the socket
+ */
 export const disconnectSocket = () => {
-  if (socket && socket.connected) {
+  if (socket) {
     socket.disconnect();
     console.log('🛑 Socket disconnected');
+    socket = null;
   }
 };
 
-// Get socket anywhere
+/**
+ * Returns the current socket instance (may be null)
+ */
 export const getSocket = () => socket;
 
-export default socket;
+export default {
+  connectSocket,
+  disconnectSocket,
+  getSocket,
+};
